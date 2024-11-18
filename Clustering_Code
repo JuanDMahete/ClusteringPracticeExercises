@@ -1,0 +1,88 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans, DBSCAN
+from google.colab import files
+
+# Subir el archivo
+uploaded = files.upload()
+
+# Cargar el archivo subido
+file_name = list(uploaded.keys())[0]
+df = pd.read_csv(file_name, index_col='DEPTH_MD')
+
+# Verificar si las columnas necesarias están presentes
+if 'RHOB' in df.columns and 'NPHI' in df.columns:
+    # Eliminar valores faltantes
+    df.dropna(subset=['RHOB', 'NPHI'], inplace=True)
+
+    # Escalar los datos
+    scaler = StandardScaler()
+    df[['RHOB_t', 'NPHI_t']] = scaler.fit_transform(df[['RHOB', 'NPHI']])
+else:
+    raise ValueError("Las columnas 'RHOB' y 'NPHI' no están presentes en el archivo.")
+
+# -------------------------------------------------------
+# Ejercicio de K-Means (como ya lo tenías)
+# Encontrar el número óptimo de clusters utilizando el método del codo
+inertias = []
+k_values = range(1, 10)
+
+for k in k_values:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(df[['RHOB_t', 'NPHI_t']])
+    inertias.append(kmeans.inertia_)
+
+# Graficar el método del codo
+plt.plot(k_values, inertias, marker='o')
+plt.xlabel('Número de clusters')
+plt.ylabel('Inercia')
+plt.title('Método del Codo')
+plt.grid()
+plt.show()
+
+# Ajustar k-means con el número óptimo de clusters (por ejemplo, 3)
+optimal_clusters = 3
+kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
+df['kmeans_labels'] = kmeans.fit_predict(df[['RHOB_t', 'NPHI_t']])
+
+# Graficar los resultados del clustering K-means
+plt.scatter(df['NPHI_t'], df['RHOB_t'], c=df['kmeans_labels'], cmap='viridis')
+plt.xlabel('NPHI_t')
+plt.ylabel('RHOB_t')
+plt.title('Resultados de K-Means Clustering')
+plt.colorbar(label='Cluster')
+plt.grid()
+plt.show()
+
+# -------------------------------------------------------
+# Ejercicio de DBSCAN
+# Aplicando DBSCAN
+dbscan = DBSCAN(eps=0.5, min_samples=5)
+df['dbscan_labels'] = dbscan.fit_predict(df[['RHOB_t', 'NPHI_t']])
+
+# Graficar los resultados del DBSCAN
+plt.scatter(df['NPHI_t'], df['RHOB_t'], c=df['dbscan_labels'], cmap='viridis')
+plt.xlabel('NPHI_t')
+plt.ylabel('RHOB_t')
+plt.title('Resultados de DBSCAN Clustering')
+plt.colorbar(label='Cluster')
+plt.grid()
+plt.show()
+
+# -------------------------------------------------------
+# Ejercicio de Clustering Jerárquico (Hierarchical Clustering)
+from sklearn.cluster import AgglomerativeClustering
+
+# Clustering jerárquico
+hierarchical = AgglomerativeClustering(n_clusters=3)
+df['hierarchical_labels'] = hierarchical.fit_predict(df[['RHOB_t', 'NPHI_t']])
+
+# Graficar los resultados del Clustering Jerárquico
+plt.scatter(df['NPHI_t'], df['RHOB_t'], c=df['hierarchical_labels'], cmap='viridis')
+plt.xlabel('NPHI_t')
+plt.ylabel('RHOB_t')
+plt.title('Resultados de Hierarchical Clustering')
+plt.colorbar(label='Cluster')
+plt.grid()
+plt.show()
